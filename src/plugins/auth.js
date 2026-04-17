@@ -17,3 +17,5 @@ async function authPlugin (fastify) {
         }
     });
 }
+
+export default fp(authPlugin);
