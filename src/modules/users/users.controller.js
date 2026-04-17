@@ -26,15 +26,11 @@ export const loginHandler = async (request, reply) => {
             .send({ message: "Login successful" });
 
     } catch (error) {
-        if (error.name === "ZodError") {
-            return reply.status(400).send({
-                message: "Validation failed",
-                errors: error.issues.map((err) => ({
-                    field: err.path[0],
-                    message: err.message,
-                })),
-            });
+        if (error.message === "Invalid credentials") {
+            return reply.status(401).send({ error: "Invalid username or password" });
         }
-        return reply.status(401).send({ error: error.message });
+
+        request.log.error("Login Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
     }
 }
