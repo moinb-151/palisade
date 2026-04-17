@@ -15,6 +15,18 @@ export async function buildApp() {
     app.setValidatorCompiler(validatorCompiler);
     app.setSerializerCompiler(serializerCompiler);
 
+    app.setErrorHandler((error, request, reply) => {
+        if (error.validation) {
+            return reply.status(400).send({
+                message: "Validation failed",
+                errors: error.validation.map((err) => ({
+                    field: err.instancePath.slice(1),
+                    message: err.message,
+                })),
+            })
+        }
+    });
+
     await app.register(fastifyJwt, {
         secret: JWT_SECRET,
         sign: {
@@ -29,7 +41,7 @@ export async function buildApp() {
 
     await app.register(prismaPlugin);
     await app.register(authPlugin);
-    
+
     await app.register(userRoutes, { prefix: "/users" });
 
     return app;
