@@ -3,6 +3,7 @@ import fastifyJwt from "@fastify/jwt";
 import fastifyCookie from "@fastify/cookie";
 import { validatorCompiler, serializerCompiler } from "fastify-type-provider-zod";
 import prismaPlugin from "./plugins/prisma.js";
+import authPlugin from "./plugins/auth.js";
 import userRoutes from "./modules/users/users.routes.js";
 import { JWT_SECRET, JWT_ALGORITHM } from "./config/env.js";
 
@@ -27,6 +28,8 @@ export async function buildApp() {
     await app.register(fastifyCookie);
 
     await app.register(prismaPlugin);
+    await app.register(authPlugin);
+    
     await app.register(userRoutes, { prefix: "/users" });
 
     return app;
