@@ -1,4 +1,8 @@
-import { loginUser, createRole } from "./users.service.js";
+import { 
+    loginUser, 
+    createRole,
+    createPermission
+ } from "./users.service.js";
 import { 
     JWT_ACCESS_EXPIRY_SECONDS, 
     JWT_REFRESH_EXPIRY_SECONDS, 
@@ -51,6 +55,26 @@ export const createRoleHandler = async (request, reply) => {
         }
 
         request.log.error("Create Role Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
+    }
+}
+
+export const createPermissionHandler = async (request, reply) => {
+    const { action } = request.body;
+
+    if (!action || typeof action !== "string") {
+        return reply.status(400).send({ error: "Action is required and must be a string" });
+    }
+
+    try {
+        const permission = await createPermission(request.server, action);
+        return reply.status(201).send({ message: "Permission created successfully", permission });
+    } catch (error) {
+        if (error.message === "Permission with this action already exists") {
+            return reply.status(400).send({ error: error.message });
+        }
+
+        request.log.error("Create Permission Route Crash:", error);
         return reply.status(500).send({ error: "Internal server error" });
     }
 }

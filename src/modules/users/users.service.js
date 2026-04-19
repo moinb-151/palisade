@@ -68,3 +68,21 @@ export const createRole = async (fastify, roleName, permissions) => {
 
     return role;
 }
+
+export const createPermission = async (fastify, action) => {
+    const prisma = fastify.prisma;
+
+    const existingPermission = await prisma.permission.findUnique({
+        where: { action },
+    });
+
+    if (existingPermission) {
+        throw new Error("Permission with this action already exists");
+    }
+
+    const permission = await prisma.permission.create({
+        data: { action },
+    })
+
+    return permission;
+}
