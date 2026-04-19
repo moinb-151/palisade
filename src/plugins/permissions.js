@@ -37,7 +37,7 @@ export function permissionPlugin(fastify) {
                 return reply.status(403).send({ message: "Forbidden: Insufficient permissions" });
             }
         }
-    })
+    });
 }
 
 export default fp(permissionPlugin);
