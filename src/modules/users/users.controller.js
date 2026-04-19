@@ -1,10 +1,12 @@
 import { 
+    createUser,
     loginUser, 
     createRole,
     getRoles,
     createPermission,
     getPermissions,
     updateUserRole,
+    updateRolePermissions
  } from "./users.service.js";
 import { 
     JWT_ACCESS_EXPIRY_SECONDS, 
@@ -13,6 +15,7 @@ import {
     COOKIE_SECURE,
     COOKIE_SAME_SITE
 } from "../../config/env.js";
+import { request } from "node:http";
 
 const COOKIE_OPTIONS = {
     httpOnly: COOKIE_HTTP_ONLY,
@@ -20,6 +23,22 @@ const COOKIE_OPTIONS = {
     sameSite: COOKIE_SAME_SITE,
     path: "/",
 };
+
+export const registerHandler = async (request, reply) => {
+    const { username, password } = request.body;
+
+    try {
+        const user = await createUser(request.server, username, password);
+        return reply.status(201).send({ message: "User registered successfully", user });
+    } catch (error) {
+        if (error.message === "Username already exists") {
+            return reply.status(400).send({ error: error.message });
+        }
+
+        request.log.error("Register Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
+    }
+}
 
 export const loginHandler = async (request, reply) => {
     const { username, password } = request.body;
@@ -141,6 +160,23 @@ export const updateUserRoleHandler = async (request, reply) => {
         }
 
         request.log.error("Update User Role Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
+    }
+}
+
+export const updateRolePermissionsHandler = async (request, reply) => {
+    const { roleName, permissionsToAdd, permissionsToRemove } = request.body;
+
+    try {
+        const updatedRole = await updateRolePermissions(request.server, roleName, permissionsToAdd, permissionsToRemove);
+        return reply.status(200).send({ message: "Role permissions updated successfully", role: updatedRole });
+    } catch (error) {
+        if (error.message === "Role not found" || 
+            error.message === "One or more permissions to add or remove not found") {
+            return reply.status(404).send({ error: error.message });
+        }
+
+        request.log.error("Update Role Permissions Route Crash:", error);
         return reply.status(500).send({ error: "Internal server error" });
     }
 }

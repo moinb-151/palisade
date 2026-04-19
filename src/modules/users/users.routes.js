@@ -1,20 +1,30 @@
-import { 
+import {
+    RegisterRequestSchema,
     LoginRequestSchema, 
     CreateRoleRequestSchema,
     PaginationQuerySchema,
     UserIdParamSchema,
-    AssignRoleRequestSchema
+    AssignRoleRequestSchema,
+    UpdateRolePermissionsRequestSchema
 } from "./users.schema.js";
-import { 
+import {
+    registerHandler,
     loginHandler, 
     createRoleHandler,
     getRolesHandler,
     createPermissionHandler, 
     getPermissionsHandler,
-    updateUserRoleHandler
+    updateUserRoleHandler,
+    updateRolePermissionsHandler
 } from "./users.controller.js";
 
 export default async function userRoutes(fastify) {
+    fastify.post("/register/", {
+        schema: {
+            body: RegisterRequestSchema,
+        }
+    }, registerHandler);
+
     fastify.post("/login/", {
         schema: {
             body: LoginRequestSchema,
@@ -43,11 +53,18 @@ export default async function userRoutes(fastify) {
         preHandler: [fastify.authenticate, fastify.requirePermission("create:permissions")],
     }, getPermissionsHandler);
 
-    fastify.patch("/users/change-role/:userId/", {
+    fastify.patch("/update-role-permissions/", {
+        schema: {
+            body: UpdateRolePermissionsRequestSchema,
+        },
+        preHandler: [fastify.authenticate, fastify.requirePermission("update:roles")],
+    }, updateRolePermissionsHandler);
+
+    fastify.patch("/change-role/:userId/", {
         schema: {
             params: UserIdParamSchema,
             body: AssignRoleRequestSchema,
         },
-        preHandler: [fastify.authenticate, fastify.requirePermission("update:user-roles")],
+        preHandler: [fastify.authenticate, fastify.requirePermission("assign:roles")],
     }, updateUserRoleHandler);
 }

@@ -2,6 +2,44 @@ import bcrypt from "bcrypt";
 import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
 import fastify from "fastify";
 
+export const createUser = async (fastify, username, password) => {
+    const prisma = fastify.prisma;
+
+    const existingUser = await prisma.user.findUnique({
+        where: { username },
+    });
+
+    if (existingUser) {
+        throw new Error("Username already exists");
+    }
+
+    const userRole = await prisma.role.findUnique({
+        where: { name: "USER" },
+    });
+
+    const passwordHash = await bcrypt.hash(password, 12);
+
+    const user = await prisma.user.create({
+        data: {
+            username,
+            passwordHash,
+            roleId: userRole.id
+        },
+        select: {
+            id: true,
+            username: true,
+            role: {
+                select: {
+                    id: true,
+                    name: true,
+                }
+            }
+        }
+    });
+
+    return user;
+}
+
 export const loginUser = async (fastify, username, password) => {
 
     const prisma = fastify.prisma;
@@ -158,4 +196,42 @@ export const updateUserRole = async (fastify, userId, roleName) => {
     });
 
     return updatedUser;
+}
+
+export const updateRolePermissions = async (fastify, roleName, permissionsToAdd = [], permissionsToRemove = []) => {
+    const prisma = fastify.prisma;
+
+    const role = await prisma.role.findUnique({
+        where: { name: roleName },
+        include: { permissions: true },
+    });
+
+    if (!role) {
+        throw new Error("Role not found");
+    }
+
+    const permissionRecordsToAdd = await prisma.permission.findMany({
+        where: { action: { in: permissionsToAdd } },
+    });
+
+    const permissionRecordsToRemove = await prisma.permission.findMany({
+        where: { action: { in: permissionsToRemove } },
+    });
+
+    if (permissionRecordsToAdd.length !== permissionsToAdd.length || 
+        permissionRecordsToRemove.length !== permissionsToRemove.length) {
+        throw new Error("One or more permissions to add or remove not found");
+    }
+
+    const updatedRole = await prisma.role.update({
+        where: { name: roleName },
+        data: {
+            permissions: {
+                connect: permissionRecordsToAdd.map(p => ({ id: p.id })),
+                disconnect: permissionRecordsToRemove.map(p => ({ id: p.id })),
+            },
+        }
+    });
+
+    return updatedRole;
 }
