@@ -1,4 +1,4 @@
-import { loginUser } from "./users.service.js";
+import { loginUser, createRole } from "./users.service.js";
 import { 
     JWT_ACCESS_EXPIRY_SECONDS, 
     JWT_REFRESH_EXPIRY_SECONDS, 
@@ -31,6 +31,22 @@ export const loginHandler = async (request, reply) => {
         }
 
         request.log.error("Login Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
+    }
+}
+
+export const createRoleHandler = async (request, reply) => {
+    const { roleName, permissions } = request.body;
+
+    try {
+        const role = await createRole(request.server, roleName, permissions);
+        return reply.status(201).send({ message: "Role created successfully", role });
+    } catch (error) {
+        if (error.message === "One or more permissions not found") {
+            return reply.status(400).send({ error: "One or more permissions not found" });
+        }
+
+        request.log.error("Create Role Route Crash:", error);
         return reply.status(500).send({ error: "Internal server error" });
     }
 }

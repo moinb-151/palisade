@@ -1,5 +1,6 @@
 import bcrypt from "bcrypt";
 import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
+import fastify from "fastify";
 
 export const loginUser = async (fastify, username, password) => {
 
@@ -35,4 +36,35 @@ export const loginUser = async (fastify, username, password) => {
     const refreshToken = generateRefreshToken(fastify, payload);
 
     return { accessToken, refreshToken };
-} 
+}
+
+export const createRole = async (fastify, roleName, permissions) => {
+    const prisma = fastify.prisma;
+
+    const permissionRecords = await prisma.permission.findMany({
+        where: { action: { in: permissions } },
+    });
+
+    if (permissionRecords.length !== permissions.length) {
+        throw new Error("One or more permissions not found");
+    }
+
+    const existingRole = await prisma.role.findUnique({
+        where: { name: roleName },
+    });
+
+    if (existingRole) {
+        throw new Error("Role with this name already exists");
+    }
+
+    const role = await prisma.role.create({
+        data: {
+            name: roleName,
+            permissions: {
+                connect: permissionRecords.map(p => ({ id: p.id })),
+            },
+        },
+    });
+
+    return role;
+}
