@@ -43,11 +43,11 @@ export const createRoleHandler = async (request, reply) => {
         return reply.status(201).send({ message: "Role created successfully", role });
     } catch (error) {
         if (error.message === "One or more permissions not found") {
-            return reply.status(400).send({ error: "One or more permissions not found" });
+            return reply.status(400).send({ error: error.message });
         }
 
         if (error.message === "Role with this name already exists") {
-            return reply.status(400).send({ error: "Role with this name already exists" });
+            return reply.status(400).send({ error: error.message });
         }
 
         request.log.error("Create Role Route Crash:", error);
