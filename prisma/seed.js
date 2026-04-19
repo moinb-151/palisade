@@ -3,11 +3,12 @@ import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
-const PERMISSIONS = ["create:roles", "create:permissions", "assign:roles", "ban:users"]
+const PERMISSIONS = ["create:roles", "create:permissions", "assign:roles", "update:roles", "ban:users", "read:profile", "update:profile"]
 
 const ROLES = {
     "SUPER_ADMIN": PERMISSIONS,
     "ADMIN": ["assign:roles", "ban:users"],
+    "USER": ["read:profile", "update:profile"],
 }
 
 async function main() {
