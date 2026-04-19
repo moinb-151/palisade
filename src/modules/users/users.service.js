@@ -122,3 +122,40 @@ export const getPermissions = async (fastify, skip = 0, limit = 10) => {
 
     return { permissions, totalRecords, totalPages };
 }
+
+export const updateUserRole = async (fastify, userId, roleName) => {
+    const prisma = fastify.prisma;
+
+    const role = await prisma.role.findUnique({
+        where: { name: roleName },
+    });
+
+    if (!role) {
+        throw new Error("Role not found");
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { id: userId },
+    });
+
+    if (!user) {
+        throw new Error("User not found");
+    }
+
+    const updatedUser = await prisma.user.update({
+        where: { id: userId },
+        data: { roleId: role.id },
+        select: {
+            id: true,
+            username: true,
+            role: {
+                select: {
+                    id: true,
+                    name: true,
+                }
+            }   
+        }
+    });
+
+    return updatedUser;
+}

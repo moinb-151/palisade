@@ -13,4 +13,12 @@ export const CreateRoleRequestSchema = z.object({
 export const PaginationQuerySchema = z.object({
     page: z.coerce.number().int().positive().default(1),
     limit: z.coerce.number().int().positive().max(100).default(10),
+}) 
+
+export const UserIdParamSchema = z.object({
+    userId: z.coerce.number().int().positive({"error": "userId must be a positive integer"}),
 })
+
+export const AssignRoleRequestSchema = z.object({
+    roleName: z.string().min(2, { "error": "Role name is required" }),
+});

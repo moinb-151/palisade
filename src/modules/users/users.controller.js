@@ -3,7 +3,8 @@ import {
     createRole,
     getRoles,
     createPermission,
-    getPermissions
+    getPermissions,
+    updateUserRole,
  } from "./users.service.js";
 import { 
     JWT_ACCESS_EXPIRY_SECONDS, 
@@ -123,6 +124,23 @@ export const getPermissionsHandler = async (request, reply) => {
         });
     } catch (error) {
         request.log.error("Get Permissions Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
+    }
+}
+
+export const updateUserRoleHandler = async (request, reply) => {
+    const { userId } = request.params;
+    const { roleName } = request.body;
+
+    try {
+        const updatedUser = await updateUserRole(request.server, userId, roleName);
+        return reply.status(200).send({ message: "User role updated successfully", user: updatedUser });
+    } catch (error) {
+        if (error.message === "Role not found" || error.message === "User not found") {
+            return reply.status(404).send({ error: error.message });
+        }
+
+        request.log.error("Update User Role Route Crash:", error);
         return reply.status(500).send({ error: "Internal server error" });
     }
 }
