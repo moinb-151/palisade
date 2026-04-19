@@ -1,7 +1,9 @@
 import { 
     loginUser, 
     createRole,
-    createPermission
+    getRoles,
+    createPermission,
+    getPermissions
  } from "./users.service.js";
 import { 
     JWT_ACCESS_EXPIRY_SECONDS, 
@@ -59,6 +61,29 @@ export const createRoleHandler = async (request, reply) => {
     }
 }
 
+export const getRolesHandler = async (request, reply) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    const skip = (page - 1) * limit;
+
+    try {
+        const { roles, totalRecords, totalPages } = await getRoles(request.server, skip, limit);
+
+        return reply.status(200).send({
+            data: roles,
+            meta: {
+                totalRecords,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
+    } catch (error) {
+        request.log.error("Get Roles Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
+    }
+}
+
 export const createPermissionHandler = async (request, reply) => {
     const { action } = request.body;
 
@@ -75,6 +100,29 @@ export const createPermissionHandler = async (request, reply) => {
         }
 
         request.log.error("Create Permission Route Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
+    }
+}
+
+export const getPermissionsHandler = async (request, reply) => {
+    const { page = 1, limit = 10 } = request.query;
+
+    const skip = (page - 1) * limit;
+
+    try {
+        const { permissions, totalRecords, totalPages } = await getPermissions(request.server, skip, limit);
+
+        return reply.status(200).send({
+            data: permissions,
+            meta: {
+                totalRecords,
+                totalPages,
+                currentPage: page,
+                limit
+            }
+        });
+    } catch (error) {
+        request.log.error("Get Permissions Route Crash:", error);
         return reply.status(500).send({ error: "Internal server error" });
     }
 }

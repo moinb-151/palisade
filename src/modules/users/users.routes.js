@@ -1,8 +1,14 @@
-import { LoginRequestSchema, CreateRoleRequestSchema } from "./users.schema.js";
+import { 
+    LoginRequestSchema, 
+    CreateRoleRequestSchema,
+    PaginationQuerySchema
+} from "./users.schema.js";
 import { 
     loginHandler, 
     createRoleHandler,
-    createPermissionHandler 
+    getRolesHandler,
+    createPermissionHandler, 
+    getPermissionsHandler
 } from "./users.controller.js";
 
 export default async function userRoutes(fastify) {
@@ -19,7 +25,18 @@ export default async function userRoutes(fastify) {
         preHandler: [fastify.authenticate, fastify.requiredPermission("create:roles")],
     }, createRoleHandler);
 
+    fastify.get("/roles/", {
+        schema: {
+            querystring: PaginationQuerySchema,
+        },
+        preHandler: [fastify.authenticate, fastify.requiredPermission("create:roles")],
+    }, getRolesHandler);
+
     fastify.post("/permissions/", {
         preHandler: [fastify.authenticate, fastify.requiredPermission("create:permissions")],
     }, createPermissionHandler);
+
+    fastify.get("/permissions/", {
+        preHandler: [fastify.authenticate, fastify.requiredPermission("create:permissions")],
+    }, getPermissionsHandler);
 }

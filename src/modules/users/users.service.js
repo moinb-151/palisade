@@ -69,6 +69,25 @@ export const createRole = async (fastify, roleName, permissions) => {
     return role;
 }
 
+export const getRoles = async (fastify, skip = 0, limit = 10) => {
+
+    const prisma = fastify.prisma;
+
+    const [roles, totalRecords] = await prisma.$transaction([
+        prisma.role.findMany({
+            skip,
+            take: limit,
+            include: { permissions: true },
+            orderBy: { name: "asc" },
+        }),
+        prisma.role.count(),
+    ]);
+
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    return { roles, totalRecords, totalPages };
+}
+
 export const createPermission = async (fastify, action) => {
     const prisma = fastify.prisma;
 
@@ -85,4 +104,21 @@ export const createPermission = async (fastify, action) => {
     })
 
     return permission;
+}
+
+export const getPermissions = async (fastify, skip = 0, limit = 10) => {
+    const prisma = fastify.prisma;
+
+    const [permissions, totalRecords] = await prisma.$transaction([
+        prisma.permission.findMany({
+            skip,
+            take: limit,
+            orderBy: { action: "asc" },
+        }),
+        prisma.permission.count(),
+    ]);
+
+    const totalPages = Math.ceil(totalRecords / limit);
+
+    return { permissions, totalRecords, totalPages };
 }
