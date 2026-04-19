@@ -3,7 +3,7 @@ import bcrypt from "bcrypt";
 
 const prisma = new PrismaClient();
 
-const PERMISSIONS = ["create:roles", "assign:roles", "ban:users"]
+const PERMISSIONS = ["create:roles", "create:permissions", "assign:roles", "ban:users"]
 
 const ROLES = {
     "SUPER_ADMIN": PERMISSIONS,
@@ -32,7 +32,11 @@ async function main() {
 
         const roleRecord = await prisma.role.upsert({
             where: { name },
-            update: {},
+            update: {
+                permissions: {
+                    set: permissionRecords.map(p => ({ id: p.id }))
+                }
+            },
             create: {
                 name,
                 permissions: {
