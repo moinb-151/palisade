@@ -23,7 +23,7 @@ export function permissionPlugin(fastify) {
         return true;
     }
 
-    fastify.decorate("requiredPermission", (permission) => {
+    fastify.decorate("requirePermission", (permission) => {
         return async (request, reply) => {
             const userRole = request.user.role;
 
