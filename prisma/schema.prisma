@@ -15,11 +15,12 @@ datasource db {
 }
 
 model User {
-  id           Int    @id @default(autoincrement())
-  username     String @unique
+  id           Int     @id @default(autoincrement())
+  username     String  @unique
   passwordHash String
   roleId       Int
-  role         Role   @relation(fields: [roleId], references: [id])
+  role         Role    @relation(fields: [roleId], references: [id])
+  isBanned     Boolean @default(false)
 }
 
 model Role {
