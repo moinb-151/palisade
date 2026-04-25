@@ -6,7 +6,8 @@ import {
     createPermission,
     getPermissions,
     updateUserRole,
-    updateRolePermissions
+    updateRolePermissions,
+    checkIsBanned
  } from "./users.service.js";
 import { 
     JWT_ACCESS_EXPIRY_SECONDS, 
@@ -15,7 +16,11 @@ import {
     COOKIE_SECURE,
     COOKIE_SAME_SITE
 } from "../../config/env.js";
-import { request } from "node:http";
+import {
+    generateAccessToken,
+    generateRefreshToken,
+    verifyToken 
+} from "../../utils/jwt.js";
 
 const COOKIE_OPTIONS = {
     httpOnly: COOKIE_HTTP_ONLY,
@@ -178,5 +183,39 @@ export const updateRolePermissionsHandler = async (request, reply) => {
 
         request.log.error("Update Role Permissions Route Crash:", error);
         return reply.status(500).send({ error: "Internal server error" });
+    }
+}
+
+export const refreshTokenHandler = async (request, reply) => {
+    const token = request.cookies["refresh_token"];
+
+    if (!token) {
+        return reply.status(404).send({"message": "Refresh token not found"});
+    }
+
+    try {
+        const decoded = await verifyToken(request.server, token);
+
+        if (await checkIsBanned(request.server, decoded)) {
+            return reply.status(403).send({"message": "Forbidden"});
+        }
+
+        const newAccessToken = generateAccessToken(request.server, decoded);
+        const newRefreshToken = generateRefreshToken(request.server, decoded);
+
+        return reply
+            .setCookie("access_token", newAccessToken, { ...COOKIE_OPTIONS, maxAge: JWT_ACCESS_EXPIRY_SECONDS })
+            .setCookie("refresh_token", newRefreshToken, { ...COOKIE_OPTIONS, maxAge: JWT_REFRESH_EXPIRY_SECONDS })
+            .send({ message: "Refresh successful" });
+
+    } catch (error) {
+        if (error.message === "Role not found" || 
+            error.message === "User not found") {
+
+            return reply.status(404).send({"error": error.message})
+        }
+
+        request.log.error("Refresh Token Crash:", error);
+        return reply.status(401).send({ message: "Unauthorized or Expired Token" });
     }
 }

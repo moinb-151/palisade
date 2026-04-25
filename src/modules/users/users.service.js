@@ -235,3 +235,28 @@ export const updateRolePermissions = async (fastify, roleName, permissionsToAdd 
 
     return updatedRole;
 }
+
+export const checkIsBanned = async (fastify, { id, role }) => {
+    const prisma = fastify.prisma;
+
+    const roleRecord = await prisma.role.findUnique({
+        where: { name: role }
+    });
+
+    if (!roleRecord) {
+        throw new Error("Role not found");
+    }
+
+    const user = await prisma.user.findUnique({
+        where: { 
+            id, 
+            roleId: roleRecord.id 
+        },
+    });
+
+    if (!user) {
+        throw new Error("User not found")
+    }
+
+    return user.isBanned
+}

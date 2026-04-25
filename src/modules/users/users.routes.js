@@ -9,7 +9,8 @@ import {
 } from "./users.schema.js";
 import {
     registerHandler,
-    loginHandler, 
+    loginHandler,
+    refreshTokenHandler,
     createRoleHandler,
     getRolesHandler,
     createPermissionHandler, 
@@ -30,6 +31,8 @@ export default async function userRoutes(fastify) {
             body: LoginRequestSchema,
         }
     }, loginHandler);
+
+    fastify.post("/refresh/", refreshTokenHandler);
 
     fastify.post("/roles/", {
         schema: {
