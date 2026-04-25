@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { generateAccessToken, generateRefreshToken } from "../../utils/jwt.js";
-import fastify from "fastify";
+import { JWT_REFRESH_EXPIRY_SECONDS } from "../../config/env.js";
+import redis from "../../config/redis.js";
 
 export const createUser = async (fastify, username, password) => {
     const prisma = fastify.prisma;
@@ -72,6 +73,8 @@ export const loginUser = async (fastify, username, password) => {
 
     const accessToken = generateAccessToken(fastify, payload);
     const refreshToken = generateRefreshToken(fastify, payload);
+
+    await redis.set(`refresh_token:${user.id}`, refreshToken, "EX", JWT_REFRESH_EXPIRY_SECONDS);
 
     return { accessToken, refreshToken };
 }

@@ -11,6 +11,7 @@ import {
     registerHandler,
     loginHandler,
     refreshTokenHandler,
+    logoutHandler,
     createRoleHandler,
     getRolesHandler,
     createPermissionHandler, 
@@ -33,6 +34,8 @@ export default async function userRoutes(fastify) {
     }, loginHandler);
 
     fastify.post("/refresh/", refreshTokenHandler);
+
+    fastify.post("/logout/", { preHandler: [fastify.authenticate] }, logoutHandler)
 
     fastify.post("/roles/", {
         schema: {

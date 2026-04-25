@@ -21,6 +21,7 @@ import {
     generateRefreshToken,
     verifyToken 
 } from "../../utils/jwt.js";
+import redis from "../../config/redis.js";
 
 const COOKIE_OPTIONS = {
     httpOnly: COOKIE_HTTP_ONLY,
@@ -196,12 +197,22 @@ export const refreshTokenHandler = async (request, reply) => {
     try {
         const decoded = await verifyToken(request.server, token);
 
+        const refreshKey = `refresh_token:${decoded.id}`
+
+        const storedToken = await redis.get(refreshKey);
+
+        if (!storedToken || storedToken !== token) {
+            return reply.status(401).send({"message": "Unauthorized: Invalid Session"});
+        }
+
         if (await checkIsBanned(request.server, decoded)) {
             return reply.status(403).send({"message": "Forbidden"});
         }
 
         const newAccessToken = generateAccessToken(request.server, decoded);
         const newRefreshToken = generateRefreshToken(request.server, decoded);
+
+        await redis.set(refreshKey, newRefreshToken, "EX", JWT_REFRESH_EXPIRY_SECONDS);
 
         return reply
             .setCookie("access_token", newAccessToken, { ...COOKIE_OPTIONS, maxAge: JWT_ACCESS_EXPIRY_SECONDS })
@@ -217,5 +228,22 @@ export const refreshTokenHandler = async (request, reply) => {
 
         request.log.error("Refresh Token Crash:", error);
         return reply.status(401).send({ message: "Unauthorized or Expired Token" });
+    }
+}
+
+export const logoutHandler = async (request, reply) => {
+    try {
+        const token = request.cookies["refresh_token"];
+        const decoded = await verifyToken(request.server, token);
+        await redis.del(`refresh_token:${decoded.id}`);
+
+        return reply
+            .clearCookie("access_token", { path: "/" }) 
+            .clearCookie("refresh_token", { path: "/" })
+            .send({ message: "Logged out successfully" });
+
+    } catch (error) {
+        request.log.error("Logout Crash:", error);
+        return reply.status(500).send({ error: "Internal server error" });
     }
 }
