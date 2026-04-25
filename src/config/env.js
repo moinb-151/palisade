@@ -9,6 +9,10 @@ export const PORT = process.env.PORT || 4747;
 // ------- DATABASE ---------
 export const DATABASE_URL = process.env.DATABASE_URL;
 
+// -------- REDIS ---------
+export const REDIS_HOST = process.env.REDIS_HOST || "127.0.0.1";
+export const REDIS_PORT = process.env.REDIS_PORT || 6379;
+
 // ------- JWT ---------
 export const JWT_SECRET = process.env.JWT_SECRET;
 export const JWT_ALGORITHM = process.env.JWT_ALGORITHM || "HS512";
